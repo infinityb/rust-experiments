@@ -1,10 +1,14 @@
 
 extern crate debug;
-extern crate core;
 
 mod sudoku {
+	pub static SIDE_LENGTH: uint = 9u;
+	pub static BOX_SIDE_LENGTH: uint = 3u;
+	pub static GRID_SIZE: uint = SIDE_LENGTH * SIDE_LENGTH;
+
+
     pub struct SudokuGrid {
-        cells: [int, ..81]
+        cells: [int, ..GRID_SIZE]
     }
 
     /* 
@@ -21,14 +25,16 @@ mod sudoku {
 
     impl RowPositionIterator {
         fn new(row: uint) -> RowPositionIterator {
-            assert!(row < 9, "row ({}) must be < 9", row);
+            assert!(row < SIDE_LENGTH,
+                    "row ({}) must be < {}",
+                    row, SIDE_LENGTH);
             RowPositionIterator { row: row, col: 0u }
         }
     }
 
     impl Iterator<(uint, uint)> for RowPositionIterator {
         fn next(&mut self) -> Option<(uint, uint)> {
-            if self.col < 9 {
+            if self.col < SIDE_LENGTH {
                 let out = Some((self.row, self.col));
                 self.col += 1;
                 out
@@ -45,14 +51,16 @@ mod sudoku {
 
     impl ColPositionIterator {
         fn new(col: uint) -> ColPositionIterator {
-            assert!(col < 9, "col ({}) must be < 9", col);
+            assert!(col < SIDE_LENGTH,
+                    "col ({}) must be < {}",
+                    col, SIDE_LENGTH);
             ColPositionIterator { row: 0, col: col }
         }
     }
     
     impl Iterator<(uint, uint)> for ColPositionIterator {
         fn next(&mut self) -> Option<(uint, uint)> {
-            if self.row < 9 {
+            if self.row < SIDE_LENGTH {
                 let out = Some((self.row, self.col));
                 self.row += 1;
                 out
@@ -70,20 +78,28 @@ mod sudoku {
 
     impl BoxPositionIterator {
         fn new(row: uint, col: uint) -> BoxPositionIterator {
-            assert!(row % 3 == 0, "row ({}) must be divisible by 3", row);
-            assert!(row < 9, "row ({}) must be < 9", row);
-            assert!(col % 3 == 0, "col ({}) must be divisible by 3", col);
-            assert!(col < 9, "col ({}) must be < 9", col);
+            assert!(row % BOX_SIDE_LENGTH == 0,
+                    "row ({}) must be divisible by {}",
+                    row, BOX_SIDE_LENGTH);
+            assert!(row < SIDE_LENGTH,
+                    "row ({}) must be < {}",
+                    row, SIDE_LENGTH);
+            assert!(col % BOX_SIDE_LENGTH == 0,
+                    "col ({}) must be divisible by {}",
+                    col, BOX_SIDE_LENGTH);
+            assert!(col < SIDE_LENGTH,
+                    "col ({}) must be < {}",
+                    col, SIDE_LENGTH);
             BoxPositionIterator { row: row, col: col, pos: 0 }
         }
     }
     
     impl Iterator<(uint, uint)> for BoxPositionIterator {
         fn next(&mut self) -> Option<(uint, uint)> {
-            if self.pos < 9 {
+            if self.pos < BOX_SIDE_LENGTH * BOX_SIDE_LENGTH {
                 let out = Some((
-                    self.row + self.pos / 3,
-                    self.col + self.pos % 3
+                    self.row + self.pos / BOX_SIDE_LENGTH,
+                    self.col + self.pos % BOX_SIDE_LENGTH
                 ));
                 self.pos += 1;
                 out
@@ -113,15 +129,13 @@ mod sudoku {
         }
     }
 
-    fn is_complete(iter: ~[int]) -> bool {
-        let mut symbols = [0, ..9];
+    fn is_complete(iter: ~[uint]) -> bool {
+        let mut symbols = [0, ..SIDE_LENGTH];
         for val in iter.iter() {
-            if 9 <= *val {
+            if SIDE_LENGTH <= *val {
                 fail!("bad symbol");
             }
-            if 0 <= *val {
-                symbols[*val as uint] += 1; 
-            }
+            symbols[*val] += 1; 
         }
         for counter in symbols.iter() {
             if *counter != 1 {
@@ -133,19 +147,19 @@ mod sudoku {
 
     impl SudokuGrid {
         pub fn new() -> SudokuGrid {
-            let cells = [-1, ..81];
+            let cells = [-1, ..GRID_SIZE];
             SudokuGrid { cells: cells }
         }
 
         pub fn get_cell(&self, pos: (uint, uint)) -> int {
             let (x, y) = pos;
-            self.cells[x * 9 + y]
+            self.cells[x * SIDE_LENGTH + y]
         }
         
         pub fn put_cell(&self, pos: (uint, uint), val: int) -> SudokuGrid {
             let (x, y) = pos;
             let mut cells = self.cells;
-            cells[x * 9 + y] = val;
+            cells[x * SIDE_LENGTH + y] = val;
             SudokuGrid { cells: cells }
         }
 
@@ -163,7 +177,7 @@ mod sudoku {
         }
 
         fn is_complete_rows(&self) -> bool {
-            for i in range(0u, 9u) {
+            for i in range(0u, SIDE_LENGTH) {
                 let mut iter = RowPositionIterator::new(i);
                 let quack = iter.map(|pair| self.get_cell(pair));
                 println!("quack = {:?}", quack);
@@ -171,15 +185,15 @@ mod sudoku {
                 if !is_complete(quack) {
                     return false;
                 }*/
-				fail!("left off here");
+                fail!("left off here");
             }
             true
         }
 
         fn is_complete_col(&self, col: uint) -> bool {
-            for i in range(0, 9) {
+            for i in range(0, SIDE_LENGTH as int) {
                 let mut occurrences = 0;
-                for j in range(0u, 9u) {
+                for j in range(0u, SIDE_LENGTH) {
                     if self.get_cell((j, col)) == i {
                         occurrences += 1;
                     }
